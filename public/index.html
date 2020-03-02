@@ -1,0 +1,129 @@
+<!doctype html>
+<html>
+  <head>
+    <title>Socket.IO chat</title>
+    <link rel="stylesheet" href="https://stackpath.bootstrapcdn.com/bootstrap/4.3.1/css/bootstrap.min.css"
+        integrity="sha384-ggOyR0iXCbMQv3Xipma34MD+dH/1fQ784/j6cY/iJTQUOhcWr7x9JvoRxT2MZw1T" crossorigin="anonymous">
+    <style>
+      * { margin: 0; padding: 0; box-sizing: border-box; }
+      body { font: 13px Helvetica, Arial; }
+      form { background: #000; position: fixed; bottom: 0; width: 70%; padding: 2px;}
+      form input { border: 0; padding: 10px; width: 80%; margin-right: .5%; }
+      form button { width: 10%; background: rgb(130, 224, 255); border: none; padding: 10px; }
+      #messages { list-style-type: none; margin: 0; padding: 0; }
+      #messages li { padding: 5px 10px; }
+      #conect { list-style-type: none; margin: 0; padding: 0; }
+      #conect li { padding: 5px 10px; }
+      #messages li:nth-child(odd) { background: #eee; }
+      #numConec{text-align: center;}
+      #escribir{display: none;}
+      #container{display: grid; grid-template-columns: 12; grid-template-rows: 1; width: 100vw; height: 100vh;}
+      #usuarios{grid-column: 1/ span 3;}
+      #mensjes{grid-column: 5/ span 7; }
+    </style>
+  </head>
+  <body>
+  
+  <div id="container">
+    <div id="usuarios">
+      <!-- Button trigger modal
+      <button type="button" class="btn btn-primary btn-lg" data-toggle="modal" data-target="#modelId">
+        Launch
+      </button>
+       -->
+      <!-- Modal -->
+      <div class="modal fade" id="modelId" tabindex="-1" role="dialog" aria-labelledby="modelTitleId" aria-hidden="true">
+        <div class="modal-dialog" role="document">
+          <div class="modal-content">
+            <div class="modal-header">
+              <h5 class="modal-title">Modal title</h5>
+            </div>
+            <div class="modal-body">
+              <input type="text" name="" id="usuario">
+            </div>
+            <div class="modal-footer">
+              <button type="button" class="btn btn-primary"id="user" >Save</button>
+            </div>
+          </div>
+        </div>
+      </div>
+      <ul id="conect"></ul>
+    </div>
+    <div id="mensjes">
+      <p id='numConec'>
+      </p>
+      <p id="escribir">escribiendo...</p>
+      <ul id="messages"></ul>
+      <form action="" id="mensajes">
+        <input id="m" autocomplete="off" /><button>Send</button>
+        <input type="file" id="siofu_input"/>
+      </form>
+    </div>
+  </div>
+    <script  src = "/socket.io/socket.io.js" ></script> 
+    <script src="https://code.jquery.com/jquery-1.11.1.js"></script>
+    <script src="/siofu/client.js"></script>
+        <!-- Optional JavaScript -->
+    <!-- jQuery first, then Popper.js, then Bootstrap JS -->
+    <script src="https://code.jquery.com/jquery-3.3.1.slim.min.js"
+        integrity="sha384-q8i/X+965DzO0rT7abK41JStQIAqVgRVzpbzo5smXKp4YfRvH+8abtTE1Pi6jizo" crossorigin="anonymous">
+    </script>
+    <script src="https://cdnjs.cloudflare.com/ajax/libs/popper.js/1.14.7/umd/popper.min.js"
+        integrity="sha384-UO2eT0CpHqdSJQ6hJty5KVphtPhzWj9WO1clHTMGa3JDZwrnQq4sF86dIHNDz0W1" crossorigin="anonymous">
+    </script>
+    <script src="https://stackpath.bootstrapcdn.com/bootstrap/4.3.1/js/bootstrap.min.js"
+        integrity="sha384-JjSmVgyd0p3pXB1rRibZUAYoIIy6OrQ6VrjIEaFf/nJGzIxFDsf4x0xIM+B07jRM" crossorigin="anonymous">
+    </script>
+   <script>
+      $(function () {
+    var socket = io();
+    var uploader = new SocketIOFileUpload(socket);
+    uploader.listenOnInput(document.getElementById("siofu_input"));
+      $("#modelId").modal('show');
+
+    // socket.emit('users',person);
+    // socket.on('users',function(conectados){
+    //   $('#conect').append($('<li>').text(conectados));
+    // })
+    $("#user").click(function(i){
+      i.preventDefault();
+      var user=$('#usuario').val();
+      if(!user) return;
+      socket.emit('users',user);
+      $("#modelId").modal('hide');
+      return false;
+    });
+    socket.on('users',function(conectados){
+      console.log(conectados);
+      $('#conect').append($('<li>').text(conectados));
+    })
+    $('#mensajes').submit(function(e){
+      e.preventDefault();
+      var mensaje=$('#m').val();
+      var user=$('#usuario').val();
+      if(!mensaje) return;
+      socket.emit('chat message',{from:user,text:mensaje});
+      $('#m').val('');
+      return false;
+    });
+    socket.on('chat message', function(texto){
+      $('#escribir').css("display","none");
+      $('#messages').append($('<li>').text(`${texto.from}: ${texto.text}`));
+
+    });
+    socket.on('conectados',function(conectas){
+      $('#numConec').html('usuarios conectados: '+conectas);
+    })
+    $("#m").keypress(function(){
+      socket.emit('escribiendo',$('#m').val());
+    });
+    socket.on('escribiendo',function(){
+      $('#escribir').css("display","inline");
+      setInterval(function(){
+        $('#escribir').css("display","none");
+      },5000);
+    })
+  });
+    </script>
+  </body>
+</html>
